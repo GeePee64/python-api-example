@@ -18,13 +18,16 @@ def process_request():
 
     # if transmitter_id or transmitter_id == '1':
     if request.method == 'GET':
+        print("GET")
         # Increment 'v' and return its binary value
         v = cache.get('v')
         return jsonify({'value': returnbin(v)})
 
     if request.method == 'POST':
+        print("POST")
         # Get the POST value
         value = request.form.get('value')
+        print(value)
         # Convert binary to decimal
         decimal_value = int(value,2)
         # Set 'v' to the decimal value

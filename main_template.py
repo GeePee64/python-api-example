@@ -1,42 +1,38 @@
-from flask import Flask, jsonify, request
-from flask_restful import Api, Resource
-from flasgger import Swagger
+import librosa
+from flask import Flask, request, jsonify
+from flask_caching import Cache
+from werkzeug.datastructures.structures import ImmutableDict, ImmutableMultiDict, TypeConversionDict
 
 app = Flask(__name__)
-api = Api(app)
-swagger = Swagger(app)
+cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
-class UppercaseText(Resource):
+# Default value
+cache.set('v', 101)
 
-    def get(self):
-        """
-        This method responds to the GET request for this endpoint and returns the data in uppercase.
-        ---
-        tags:
-        - Text Processing
-        parameters:
-            - name: text
-              in: query
-              type: string
-              required: true
-              description: The text to be converted to uppercase
-        responses:
-            200:
-                description: A successful GET request
-                content:
-                    application/json:
-                      schema:
-                        type: object
-                        properties:
-                            text:
-                                type: string
-                                description: The text in uppercase
-        """
-        text = request.args.get('text')
+def returnbin(val):
+    return bin(val)[2:]  # [2:] removes the '0b' prefix
 
-        return jsonify({"text": text.upper()})
+@app.route('/', methods=['GET', 'POST'])
+def process_request():
+    # Check if TransmitterId cookie is set and equals 1
 
-api.add_resource(UppercaseText, "/uppercase")
+    # if transmitter_id or transmitter_id == '1':
+    if request.method == 'GET':
+        # Increment 'v' and return its binary value
+        v = cache.get('v')
+        return jsonify({'value': returnbin(v)})
 
-if __name__ == "__main__":
-    app.run(debug=True)
+    if request.method == 'POST':
+        # Get the POST value
+        value = request.form.get('value')
+        # Convert binary to decimal
+        decimal_value = int(value,2)
+        # Set 'v' to the decimal value
+        cache.set('v', decimal_value)
+        return jsonify({'value': returnbin(v)})
+    return jsonify({'value': returnbin(v)})
+    # If TransmitterId is not set or not equal to 1, return error response
+    # return jsonify({'value': '0'})
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
